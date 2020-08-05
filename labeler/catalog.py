@@ -453,8 +453,6 @@ class ResumeFileIO(Catalog):
                    #  newEntry.text +=line
 
 
-
-
     def remove_parentheses(self,line):
         p_left_index = line.find('(')
         if p_left_index == -1:
