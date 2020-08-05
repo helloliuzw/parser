@@ -92,41 +92,47 @@ class ManualLabelClassifier(LabelClassifier):
 
 
 class ExpRuleClassifier(LabelClassifier):
-    def __init__(self,jsonpath = 'labeler/config/rule_label.json'):
+    def __init__(self,jsonpath1 = 'labeler/config/rule_label.json',jsonpath2 = 'labeler/config/hybrid_rule_label.json'):
         LabelClassifier.__init__(self)
-        f = open(jsonpath,encoding='utf-8')
+        f = open(jsonpath1,encoding='utf-8')
         self.label_dic = json.load(f)
         f.close()
         self.groupkeys = list(self.label_dic.keys())
-        
-    def __call__(self,jsonpath = 'labeler/config/rule_label.json'):
-        f = open(jsonpath,encoding='utf-8')
-        self.label_dic = json.load(f)
+        f = open(jsonpath2,encoding='utf-8')
+        self.hylabel_dic = json.load(f)
         f.close()
-        self.groupkeys = list(self.label_dic.keys())
+        self.hygroupkeys = list(self.hylabel_dic.keys())
         
-    def classify(self,text):
+    def classify(self,text,Hybrid = True):
         final = {}
         for groupname in self.groupkeys:
             res = self.groupclassify(groupname,text)
             final = {**final,**res}
+        if Hybrid:
+            final = self.hybridlabel(final)
         return final
     
-    def groupclassify(self,groupname,text):
-        group = self.label_dic[groupname]
+    def groupclassify(self,groupname,text,f=1,jsondict='b'):
+        if jsondict == 'b':
+            jsondict = self.label_dic
+        group = jsondict[groupname]
         innerkeys = list(group.keys())
         addition = innerkeys[3:]
+        
         result = {group['default']:False}
         for label in addition:
             result[label] = False
-        flag = 0
-        for item in group['isexist']:
-            if item in text:
-                flag = 1
-        for item in group['remove']:
-            if item in text:
-                flag = 0
-        if flag == 1:
+        
+        if f==1:
+            f = self.method1
+        elif f==2:
+            f = self.method2
+        elif f==3:
+            f = self.method3
+        flag = f(text,group['isexist'])
+        if f(text,group['remove']):
+            flag = False
+        if flag:
             for label in addition:
                 templist = group[label]
                 for item in templist:
@@ -134,14 +140,43 @@ class ExpRuleClassifier(LabelClassifier):
                         result[label] = True
                         return result
             result[group['default']] = True
+        if result.get('')!=None:
+            del result['']
         return result
-
+    
+    def hybridlabel(self,result_dict):
+        baselabel = [label for (label,value) in result_dict.items() if value==True]
+        for groupname in self.hygroupkeys:
+            res = self.groupclassify(groupname,baselabel,3,self.hylabel_dic)
+            result_dict = {**result_dict, **res}
+        return result_dict
+    
+    def method1(self,text,L):
+        '''Whether the item of L exists in text'''
+        for item in L:
+            if item in text:
+                return True
+        return False
+    
+    def method2(self,text,L):
+        for item in L:
+            if item not in text:
+                return False
+        return True
+    
+    def method3(self,text,L,n=2):
+        count = 0
+        for item in L:
+            if item in text:
+                count += 1
+                if count>=n:
+                    return True
+        return False
+        
+    
 class ExpKnowClassifier(LabelClassifier):
     def __init__(self,excelpath = None):
         LabelClassifier.__init__(self)
-        
-        
-        
         
 class OneVsRestSGDClassifier(LabelClassifier):
 
