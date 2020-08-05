@@ -92,13 +92,13 @@ class ManualLabelClassifier(LabelClassifier):
 
 
 class ExpRuleClassifier(LabelClassifier):
-    def __init__(self,jsonpath1 = 'labeler/config/rule_label.json',jsonpath2 = 'labeler/config/hybrid_rule_label.json'):
+    def __init__(self,rule_label_path = 'labeler/config/rule_label.json',hybrid_label_path = 'labeler/config/hybrid_rule_label.json'):
         LabelClassifier.__init__(self)
-        f = open(jsonpath1,encoding='utf-8')
+        f = open(rule_label_path,encoding='utf-8')
         self.label_dic = json.load(f)
         f.close()
         self.groupkeys = list(self.label_dic.keys())
-        f = open(jsonpath2,encoding='utf-8')
+        f = open(hybrid_label_path,encoding='utf-8')
         self.hylabel_dic = json.load(f)
         f.close()
         self.hygroupkeys = list(self.hylabel_dic.keys())
