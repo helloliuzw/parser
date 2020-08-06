@@ -131,11 +131,10 @@ class ExpRuleClassifier(LabelClassifier):
             flag = False
         if flag:
             for label in addition:
-                templist = group[label]
-                for item in templist:
-                    if item in text:
-                        result[label] = True
-                        return result
+                temp = group[label]
+                if f(text,temp):
+                    result[label] = True
+                    return result
             result[group['default']] = True
         if result.get('')!=None:
             del result['']
@@ -153,20 +152,22 @@ class ExpRuleClassifier(LabelClassifier):
             res = self.hybridclassify(labelname,result_dict)
             result_dict = {**result_dict, **res}
         return result_dict
-    
-    def method1(self,text,L):
-        '''Whether the item of L exists in text'''
-        for item in L:
+    '''存在性判断'''
+    def method1(self,text,D):
+        for item in D['keyword']:
             if item in text:
                 return True
+        for reg in D['regular']:
+            if re.search(reg,text) != None:
+                return True
         return False
-    
-    def method2(self,text,L):
-        for item in L:
+    '''任意性判断'''
+    def method2(self,text,D):
+        for item in D['keyword']:
             if item not in text:
                 return False
         return True
-    
+    '''简单的Hybrid Label生成法'''
     def method3(self,text,L,n=2):
         count = 0
         for item in L:
