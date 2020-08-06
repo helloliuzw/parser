@@ -101,7 +101,7 @@ class ExpRuleClassifier(LabelClassifier):
         f = open(hybrid_label_path,encoding='utf-8')
         self.hylabel_dic = json.load(f)
         f.close()
-        self.hygroupkeys = list(self.hylabel_dic.keys())
+        self.hybridkeys = list(self.hylabel_dic.keys())
         
     def classify(self,text,Hybrid = True):
         final = {}
@@ -109,12 +109,11 @@ class ExpRuleClassifier(LabelClassifier):
             res = self.groupclassify(groupname,text)
             final = {**final,**res}
         if Hybrid:
-            final = self.hybridlabel(final)
+            final = self.addhybridlabel(final)
         return final
     
-    def groupclassify(self,groupname,text,f=1,jsondict='b'):
-        if jsondict == 'b':
-            jsondict = self.label_dic
+    def groupclassify(self,groupname,text,f=1):
+        jsondict = self.label_dic
         group = jsondict[groupname]
         innerkeys = list(group.keys())
         addition = innerkeys[3:]
@@ -127,8 +126,6 @@ class ExpRuleClassifier(LabelClassifier):
             f = self.method1
         elif f==2:
             f = self.method2
-        elif f==3:
-            f = self.method3
         flag = f(text,group['isexist'])
         if f(text,group['remove']):
             flag = False
@@ -144,10 +141,16 @@ class ExpRuleClassifier(LabelClassifier):
             del result['']
         return result
     
-    def hybridlabel(self,result_dict):
-        baselabel = [label for (label,value) in result_dict.items() if value==True]
-        for groupname in self.hygroupkeys:
-            res = self.groupclassify(groupname,baselabel,3,self.hylabel_dic)
+    def hybridclassify(self,labelname,D):
+        jsondict = self.hylabel_dic
+        f = eval(jsondict[labelname])        
+        result = {labelname:False}        
+        result[labelname] = f(D)
+        return result
+    
+    def addhybridlabel(self,result_dict):
+        for labelname in self.hybridkeys:
+            res = self.hybridclassify(labelname,result_dict)
             result_dict = {**result_dict, **res}
         return result_dict
     
