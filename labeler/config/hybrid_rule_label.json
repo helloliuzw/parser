@@ -1,1 +1,1 @@
-{"major": {"isexist": ["一般院校", "双一流大学", "海外名校", "科技技术"], "remove": [], "default": "理工方向"}}
+{"理工方向": "lambda res:((res['一般院校'] or res['双一流大学'] or res['海外名校']) and res['科技技术'])"}
