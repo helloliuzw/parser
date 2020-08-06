@@ -20,3 +20,28 @@ print('\nSample Text:',text2)
 t1 = time.time()
 print(label.classify(text2,True))
 print('Time Consuming:',time.time()-t1,'s')
+
+# Testing on a mini dataset.
+f = open('final_version.txt','r',encoding='utf-8')
+data = f.readlines()
+f.close()
+data = [item.strip().split()[1] for item in data if ' ' in item]
+
+clf = ExpRuleClassifier()
+toshow = []
+count = 0
+print('Testing on a mini dataset.')
+t0 = time.time()
+for resume in data:
+    res_dict = clf.classify(resume)
+    predict = [label for (label,value) in res_dict.items() if value==True]
+    '''
+    if '深圳' in predict:
+        predict.remove('深圳')'''
+    if predict == []:
+        toshow.append('0 '+resume)
+    else:
+        toshow.append('1 '+resume+'  '+str(predict))
+        count += 1
+print('Time Consuming:',time.time()-t0,'s')
+print('Labeled resume:',count,'Total resume:',len(toshow))
