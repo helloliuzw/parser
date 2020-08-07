@@ -6,6 +6,7 @@ import time
 
 text1 = '清华大学深圳研究院电子通信硕士'
 text2 = '深圳市罗湖区街道派出所民警'
+text3 = '深圳市交通运输委员会福田交通运输局副局长'
 
 t0 = time.time()
 label = ExpRuleClassifier()
@@ -21,6 +22,11 @@ t1 = time.time()
 print(label.classify(text2,True))
 print('Time Consuming:',time.time()-t1,'s')
 
+print('\nSample Text:',text3)
+t1 = time.time()
+print(label.classify(text3,True))
+print('Time Consuming:',time.time()-t1,'s')
+
 # Testing on a mini dataset.
 f = open('final_version.txt','r',encoding='utf-8')
 data = f.readlines()
@@ -30,7 +36,7 @@ data = [item.strip().split()[1] for item in data if ' ' in item]
 clf = ExpRuleClassifier()
 toshow = []
 count = 0
-print('Testing on a mini dataset.')
+print('\nTesting on a mini dataset.')
 t0 = time.time()
 for resume in data:
     res_dict = clf.classify(resume)
