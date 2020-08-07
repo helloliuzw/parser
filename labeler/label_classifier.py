@@ -134,6 +134,8 @@ class ExpRuleClassifier(LabelClassifier):
                 temp = group[label]
                 if f(text,temp):
                     result[label] = True
+                    if result.get('')!=None:
+                        del result['']
                     return result
             result[group['default']] = True
         if result.get('')!=None:
