@@ -18,7 +18,7 @@ class LabelClassifier:
     Parameter:
         label_dict: a map from integer to string label
     """
-    def __init__(self,label_dict_path='data/labels.txt'):
+    def __init__(self,label_dict_path='../data/labels.txt'):
         self.labeldict = {}  # dictionary that maps int to label text
         self.labeldictR = {} # maps label text to int
         self.load_label_dict(label_dict_path)
@@ -92,7 +92,7 @@ class ManualLabelClassifier(LabelClassifier):
 
 
 class ExpRuleClassifier(LabelClassifier):
-    def __init__(self,rule_label_path = 'labeler/config/rule_label.json',hybrid_label_path = 'labeler/config/hybrid_rule_label.json'):
+    def __init__(self,rule_label_path = './config/rule_label.json',hybrid_label_path = './config/hybrid_rule_label.json'):
         LabelClassifier.__init__(self)
         f = open(rule_label_path,encoding='utf-8')
         self.label_dic = json.load(f)
@@ -373,3 +373,28 @@ class WordMoverKNNClassifier(LabelClassifier):
 
     """
     pass
+
+if __name__ == '__main__':
+    import time
+    text1 = '清华大学深圳研究院电子通信硕士'
+    text2 = '深圳市罗湖区街道派出所民警'
+    text3 = '深圳市交通运输委员会福田交通运输局副局长'
+
+    t0 = time.time()
+    label = ExpRuleClassifier()
+    print('Obj building Consuming:',time.time()-t0,'s')
+
+    print('\nSample Text:',text1)
+    t0 = time.time()
+    print(label.classify(text1,True))
+    print('Time Consuming:',time.time()-t0,'s')
+
+    print('\nSample Text:',text2)
+    t1 = time.time()
+    print(label.classify(text2,True))
+    print('Time Consuming:',time.time()-t1,'s')
+
+    print('\nSample Text:',text3)
+    t1 = time.time()
+    print(label.classify(text3,True))
+    print('Time Consuming:',time.time()-t1,'s')
