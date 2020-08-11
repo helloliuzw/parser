@@ -10,6 +10,8 @@ from gensim.models import FastText
 #from Career_Platform.parser.exceptions import TrainDataException
 import re,os,pickle
 
+location = os.path.abspath(os.path.dirname(__file__))
+
 class LabelClassifier:
     """
     base class for label classifier
@@ -18,7 +20,7 @@ class LabelClassifier:
     Parameter:
         label_dict: a map from integer to string label
     """
-    def __init__(self,label_dict_path=os.path.abspath(os.path.dirname(__file__))+'/../data/labels.txt'):
+    def __init__(self,label_dict_path=location+'/../data/labels.txt'):
         self.labeldict = {}  # dictionary that maps int to label text
         self.labeldictR = {} # maps label text to int
         self.load_label_dict(label_dict_path)
@@ -92,7 +94,7 @@ class ManualLabelClassifier(LabelClassifier):
 
 
 class ExpRuleClassifier(LabelClassifier):
-    def __init__(self,rule_label_path = os.path.abspath(os.path.dirname(__file__))+'/config/rule_label.json',hybrid_label_path = os.path.abspath(os.path.dirname(__file__))+'/config/hybrid_rule_label.json'):
+    def __init__(self,rule_label_path =location+'/config/rule_label.json',hybrid_label_path =location+'/config/hybrid_rule_label.json'):
         LabelClassifier.__init__(self)
         f = open(rule_label_path,encoding='utf-8')
         self.label_dic = json.load(f)

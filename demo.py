@@ -1,7 +1,7 @@
-from labeler.label_classifier import ExpRuleClassifier
+from SZlabeler.label_classifier import ExpRuleClassifier
 import os
 import time
-
+location = os.path.abspath(os.path.dirname(__file__))
 #print('hello, here is:',os.getcwd())
 
 text1 = '清华大学深圳研究院电子通信硕士'
@@ -28,7 +28,7 @@ print(label.classify(text3,True))
 print('Time Consuming:',time.time()-t1,'s')
 
 # Testing on a mini dataset.
-f = open('final_version.txt','r',encoding='utf-8')
+f = open(location+'/data/final_version.txt','r',encoding='utf-8')
 data = f.readlines()
 f.close()
 data = [item.strip().split()[1] for item in data if ' ' in item]
