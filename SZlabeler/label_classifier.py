@@ -6,6 +6,7 @@ import sklearn
 from sklearn.linear_model import SGDClassifier
 from sklearn.multiclass  import OneVsRestClassifier
 from gensim.models import FastText
+from .logic_tree import logictree
 #from Career_Platform.parser.database import backend_database_connection
 #from Career_Platform.parser.exceptions import TrainDataException
 import re,os,pickle
@@ -145,10 +146,16 @@ class ExpRuleClassifier(LabelClassifier):
         return result
     
     def hybridclassify(self,labelname,D):
-        jsondict = self.hylabel_dic
-        f = eval(jsondict[labelname])        
-        result = {labelname:False}        
-        result[labelname] = f(D)
+        jsondict = self.hylabel_dic[labelname]
+        ltree = logictree(jsondict['tree'],D)
+        value = ltree.getvalue()
+        expect = jsondict['expect']
+        if expect == 'any':
+            return {labelname:value}
+        if value == expect:
+            return {labelname:expect}
+        else:
+            return {}
         return result
     
     def addhybridlabel(self,result_dict):
