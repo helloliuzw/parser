@@ -8,7 +8,7 @@ from graphviz import Digraph
 location = os.path.abspath(os.path.dirname(__file__))
 
 class logictree():
-    def __init__(self,ltree,result_dict):
+    def __init__(self,ltree={},result_dict={}):
         self.tree = ltree
         self.result_dict = result_dict
     def __call__(self,ltree):
@@ -68,6 +68,70 @@ class logictree():
         exp = (' '+node[3]+' ').join(unit)
         exp = '('+exp+')'
         return f(exp)
+    
+    def exp2tree(self,expression):
+        print('Warning:请合理使用小括号，同一小括号内，and、or、not三类关键字仅出现其中一类；not运算符请贴近底层条件')
+        print('正确实例 ：("教育" and (not "科技") and ("经济" or "行政"))')
+        print('错误示例1：("教育" and not "科技" and ("经济" or "行政"))')
+        print('错误示例2：("教育" and (not "科技") and (("经济" or "行政")))')
+        if not expression.startswith('('):
+            expression = '('+expression+')'
+        Llist = []
+        grade,maxgrade = 0,0
+        allnode = []
+        for i,ch in enumerate(expression):
+            if ch=='(':
+                Llist.append(i)
+                grade += 1
+            elif ch==')':
+                maxgrade = max(grade,maxgrade)
+                allnode.append([grade,expression[Llist.pop():i+1]])
+                grade -= 1
+        allnode.reverse()
+        # allnode get, now depth tree
+        depthtree = {}
+        for i in range(1,maxgrade+1):
+            depthtree[str(i)] = []
+        for i,node in enumerate(allnode):
+            depthtree[str(node[0])].append([i,[],node[1]])
+        # depthtree
+        for dep in range(1,maxgrade):
+            for par in depthtree[str(dep)]:
+                for chi in depthtree[str(dep+1)]:
+                    if chi[2] in par[2]:
+                        par[1].append(chi[0])
+                        par[2] = par[2].replace(chi[2],'',1)             
+        # Real tree
+        nodelist = []
+        for L in depthtree.values():
+            nodelist.extend(L)
+        nodenum = len(nodelist)
+        tree = {}
+        for node in nodelist:
+            node[2] = node[2][1:-1]
+            parsed = node[2].split()
+            notflag = False
+            for operator in ['and','or']:
+                if operator in parsed:
+                    logic = operator
+                    childL = node[2].split(' '+operator+' ')
+            if 'not' in parsed:
+                logic = 'None'
+                notflag = True
+                childL = node[2].split('not ')
+            childL = [item.strip() for item in childL]
+            childL = list(set(childL))
+            if '' in childL:
+                childL.remove('')
+            if notflag == True:
+                tree[str(node[0])] = [True,childL[0],notflag,None]
+                continue
+            tree[str(node[0])] = [True,node[1],notflag,logic]
+            for source in childL:
+                tree[str(node[0])][1].append(nodenum)
+                tree[str(nodenum)] = [True,source,notflag,None]
+                nodenum += 1
+        return tree
     
 if __name__ == '__main__':
     import time
