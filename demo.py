@@ -15,22 +15,22 @@ print('Obj building Consuming:',time.time()-t0,'s')
 
 print('\nSample Text:',text1)
 t0 = time.time()
-print(label.classify(text1,True))
+print(label.classify(text1))
 print('Time Consuming:',time.time()-t0,'s')
 
 print('\nSample Text:',text2)
 t1 = time.time()
-print(label.classify(text2,True))
+print(label.classify(text2))
 print('Time Consuming:',time.time()-t1,'s')
 
 print('\nSample Text:',text3)
 t1 = time.time()
-print(label.classify(text3,True))
+print(label.classify(text3))
 print('Time Consuming:',time.time()-t1,'s')
 
 print('\nSample Text:',text4)
 t1 = time.time()
-print(label.classify(text4,True))
+print(label.classify(text4))
 print('Time Consuming:',time.time()-t1,'s')
 
 # Testing on a mini dataset.
