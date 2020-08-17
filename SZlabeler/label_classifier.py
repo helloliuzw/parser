@@ -105,6 +105,10 @@ class ExpRuleClassifier(LabelClassifier):
         self.hylabel_dic = json.load(f)
         f.close()
         self.hybridkeys = list(self.hylabel_dic.keys())
+        self.hybrid_dict = {}
+        for label in self.hybridkeys:
+            self.hybrid_dict[label] = False
+        self.ltree = logictree()
         
     def classify(self,text,Hybrid = True):
         final = {}
@@ -112,7 +116,14 @@ class ExpRuleClassifier(LabelClassifier):
             res = self.groupclassify(groupname,text)
             final = {**final,**res}
         if Hybrid:
-            final = self.addhybridlabel(final)
+            final = {**final,**self.hybrid_dict}
+            pre_dict_state = final
+            self.ltree.update_basicdict(final)
+            while True:
+                final = self.addhybridlabel(final)
+                if final == pre_dict_state:
+                    break
+                pre_dict_state = final
         return final
     
     def groupclassify(self,groupname,text,f=1):
@@ -147,8 +158,8 @@ class ExpRuleClassifier(LabelClassifier):
     
     def hybridclassify(self,labelname,D):
         jsondict = self.hylabel_dic[labelname]
-        ltree = logictree(jsondict['tree'],D)
-        value = ltree.getvalue()
+        self.ltree(jsondict['tree'])
+        value = self.ltree.getvalue()
         expect = jsondict['expect']
         if expect == 'any':
             return {labelname:value}
@@ -162,6 +173,7 @@ class ExpRuleClassifier(LabelClassifier):
         for labelname in self.hybridkeys:
             res = self.hybridclassify(labelname,result_dict)
             result_dict = {**result_dict, **res}
+            self.ltree.update_basicdict(result_dict)
         return result_dict
     '''存在性判断'''
     def method1(self,text,D):

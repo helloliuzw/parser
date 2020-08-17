@@ -13,6 +13,9 @@ class logictree():
         self.result_dict = result_dict
     def __call__(self,ltree):
         self.tree = ltree
+    def update_basicdict(self,resD):
+        self.result_dict = resD
+        
     def getvalue(self,nodeid='0'):
         # print(nodeid)
         node = self.tree[nodeid]
