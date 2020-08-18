@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #coding=utf-8
 import re
-from Career_Platform.octree.OCtree import CTree
+from matplotlib import pyplot as plt
+# from Career_Platform.octree.OCtree import CTree
 
 class Experience:
     def __init__(self,text, time=None, loc=None, org=None,seg=None,labels=None):
@@ -19,10 +20,53 @@ class WorkExperience(Experience):
         self.position = pos
 
 class Person:
-    def __init__(self,name):
+    '''Description Here'''
+    def __init__(self,name,gender='',age=30)
         self.name = name
+        self.gender = gender
+        self.age = age
+        self.tags = {}
         self.work_exp = []  #indexed by rid
-
+        self.work_labels = []
+        for item in self.work_exp:
+            self.work_labels.extend(item.labels)
+        self.work_labels = list(set(self.work_labels))
+    def __str__(self):
+        return '姓名：'+self.name+'，共有'+str(self.__len__())+'条经历；'
+\
+    def update_resumes(self,L):
+        self.work_exp = L
+        self.work_labels = []
+        for item in self.work_exp:
+            self.work_labels.extend(item.labels)
+        self.work_labels = list(set(self.work_labels))
+        
+    def labelmap(self):
+        plt.grid(True)
+        X,Y = [],[]
+        Ydict = {}
+        for i,key in enumerate(self.work_labels):
+            Ydict[key] = i+1
+        plt.yticks(fontproperties="STSong") 
+        plt.yticks([Ydict[key] for key in self.work_labels],self.work_labels)
+        for exp in self.work_exp:
+            strtuple = exp.time.split('—')
+            numtuple = [self.date2num(zw) for zw in strtuple]
+            plt.plot([numtuple[0]]*2,[0,len(self.work_labels)+1],linestyle=':',color='grey')
+            plt.text(numtuple[0],len(self.work_labels)+1,strtuple[0],ha='center')
+            X.append(numtuple)
+            Y.append(exp.labels)
+        for i,timelen in enumerate(X):
+            for label in Y[i]:
+                plt.plot(timelen,[Ydict[label]]*len(timelen),linewidth=5.0)
+                
+    def date2num(self,text,reverse=False):
+        if reverse==False:
+            num = eval(text)
+            return (num//1+(num%1)/(0.12))
+        return str(text//1+round((text%1)*12)/100)
+        
+        
 
 class Catalog:
     def __init__(self):
@@ -50,10 +94,10 @@ class Catalog:
 
 
     def get_all_parsed(self):
-        result=[]
-        for u in self.users:
-            for exp in u.work_exp:
-                result.append(exp.segmented)
+        result = []
+        for uid,user in enumerate(self.users):
+            for rid,exp in enumerate(user.work_exp):
+                result.append(((uid, rid), exp.segmented))
         return result
 
     def get_all_labels(self):
@@ -63,98 +107,8 @@ class Catalog:
                 result.append(exp.labels)
         return result
 
-# This function is defined to classify the entries into some general catafories
-    # To use this function, you must clarify which parameter you use. 'write_file' or 'read_file'
-    # If you use write_file parameter, remember to add parameter 'result'. 
-    # The 'result' usually comes from self.parse_catalog() function
-    # Otherwise, unexpected error may rise
-    def get_classified_parsed(self,result=None,write_file = None,read_file = None,):
-        if (read_file == None) and (write_file != None):
-            flag = [0]*len(result)
-            
-            for i in range(len(result)):
-                if flag[i] == 1:
-                    print('skip %d'%i)
-                    continue
-
-                print(result[i])
-
-                while True:
-                    if len(result[i]) <= 6 or result[i].find(' ') == -1:
-                        key_word = result[i]
-                        label = 7
-                        break
-                    else:
-                        key_word = input('input a keyword:\t')
-                        try:
-                            label = int(input('input the classification:\t'))
-                        except:
-                            continue
-
-                    if self.key_word_in_entry(result[i],key_word) and (label<=7 and label>=1) :
-                        break
-                
-                flag[i] = 1
-                index = result[i].index(key_word)
-                
-                
-                for j in range(i+1,len(result)):
-                    if self.key_word_match(result[j][:index+len(key_word)],result[i][:index+len(key_word)]):
-                        result[j] = self.manual_classifier(result[j],label)
-                        flag[j] = 1
-                    else:
-                        continue
-                
-                result[i] = self.manual_classifier(result[i],label)
-
-            with open(write_file,'w',encoding='utf-8') as f:
-                for entry in result:
-                    f.write(entry+'\n')
-            return result
-
-        elif (read_file != None) and (write_file == None):
-            result = []
-            with open(read_file,'r',encoding = 'utf-8') as f:
-                for line in f:
-                    result.append(line[:-1])
-            print(result)
-            return result
-
-        else:
-            print('Error! You must specify only one parameter! You will choose either read_file or write_file.')
-            print('If you choose read_file, you use the data txt that has been classified manually before.')
-            print('If you choose write_file, you will be classifying the entries on site manually. It might be time-consuming!')
-            print('If this is your first time to use this function, you need to use write_file parameter. Otherwise,\
-                I suggest you use \'read_file\' parameter to save your time')
-    
-    def key_word_match(self,result,match):
-        return result == match
-
-    def key_word_in_entry(self,result,key_word):
-        return str(key_word+' ') in result or str(' '+key_word+' ') in result or str(' '+key_word) in result
-    
-    def manual_classifier(self,result,label):
-        if label == 1:
-            result = '市政协直属 '+result
-        elif label == 2:
-            result = '市人大直属 '+result
-        elif label == 3:
-            result = '市委直属 '+result
-        elif label == 4:
-            result = '市政府直属 '+result
-        elif label == 5:
-            result = '事业单位/国企 '+result
-        elif label == 6:
-            result = '军检法机构 '+result
-        elif label == 7:
-            result = '其他 '+result
-        return result
-
-
-
     def add_tokenizer(self, tokenizer):
         self.tokenizer = tokenizer
-
 
     def parse_catalog(self,HMM=True):
         if not self.tokenizer:
@@ -285,6 +239,7 @@ class ResumeFileIO(Catalog):
                     tmp_index = 1000
 
                 part_time_entry = entry[part_time_ind+1:tmp_index]
+
                 if len(part_time_entry) > threshold:
                     entry = replace_char(entry,'，',part_time_ind)
                 else:
@@ -402,27 +357,18 @@ class ResumeFileIO(Catalog):
                                 f.write(time_period + '  ' + prefix + entry[:comma_2_ind]+'\n')
         f.close()
 
-    def time_filter(self,
-                year,  # only support for one year filter.
-                       # e.g, input "2012", it will show all the entries incluing 2012.
-                input_file_path):
-        with open(input_file_path,'r',encoding='utf-8') as in_file:
-            list1 = in_file.readlines()
+    def length_filter(self,input_file,output_file):
+        tmp = []
+        with open(input_file,'r',encoding='utf-8') as f1:
+            for line in f1:
+                tmp.append(line)
 
-        output_file_path = 'data/%s_period.txt'%str(year)
-
-        with open(output_file_path,'w',encoding='utf-8') as out_file:
-            for line in list1:
-                if line.startswith('-') or line.endswith('xls\n'):
-                    out_file.write(line)
-                else:
-                    dash_ind = line.find('—')
-                    blank_ind = (' ')
-                    t_period_start = line[:4]
-                    t_period_end = line[dash_ind+1:dash_ind+5]
-                    if year >= int(t_period_start) and year <= int(t_period_end) :
-                        out_file.write(line)
-
+        with open(output_file,'w',encoding='utf-8') as f2:
+            for entry in tmp:
+                if entry.startswith('-') or entry.endswith('.xls\n'):
+                    f2.write(entry)
+                elif len(entry)>25:
+                    f2.write(entry)
 
     def read_resume_txt(self,file_path):
         newPerson = None
@@ -467,8 +413,21 @@ class ResumeFileIO(Catalog):
                 line = line[:p_left_index]+content+line[p_right_index+1:]
 
         return line
-
-        # return re.sub("\(.*\)","",line)
-
-   # def remove_text_after_comma(self,line):
-        #return re.sub("[、|，|；|,|;].*$","",line)
+if __name__ == '__main__':
+    print('catalog.py debugging')
+    #help(Person)
+    liu = Person('张三')
+    #r0 = WorkExperience(time='',labels=[])
+    r1 = WorkExperience(text='',time='1997.08—2001.09',labels=['双一流大学'])
+    r2= WorkExperience(text='',time='2001.09—2006.04',labels=['深圳','龙华','基层工作'])
+    r3= WorkExperience(text='',time='2006.04—2016.10',labels=['深圳','教育'])
+    r4= WorkExperience(text='',time='2016.10—2020.09',labels=['深圳','市人大直属'])
+    liu.update_resumes([r1,r2,r3,r4])
+    liu.labelmap()
+    
+    '''
+    print(liu)
+    print(liu.work_exp)
+    liu[0] = 'f'
+    print(liu.work_exp)
+    print(len(liu))'''
