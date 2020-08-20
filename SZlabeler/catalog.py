@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 #coding=utf-8
-import re
 from matplotlib import pyplot as plt
+from matplotlib.pyplot import MultipleLocator
 # from Career_Platform.octree.OCtree import CTree
+import os
+import json
+import datetime
+from datetime import date
+
+location = os.path.abspath(os.path.dirname(__file__))
 
 class Experience:
     def __init__(self,text, time=None, loc=None, org=None,seg=None,labels=None):
@@ -21,11 +27,11 @@ class WorkExperience(Experience):
 
 class Person:
     '''Description Here'''
-    def __init__(self,name,gender='',age=30)
+    def __init__(self,name,gender='',age=30):
         self.name = name
         self.gender = gender
         self.age = age
-        self.tags = {}
+        self.tags = []
         self.work_exp = []  #indexed by rid
         self.work_labels = []
         for item in self.work_exp:
@@ -33,13 +39,61 @@ class Person:
         self.work_labels = list(set(self.work_labels))
     def __str__(self):
         return '姓名：'+self.name+'，共有'+str(self.__len__())+'条经历；'
-\
+    
     def update_resumes(self,L):
         self.work_exp = L
         self.work_labels = []
         for item in self.work_exp:
             self.work_labels.extend(item.labels)
         self.work_labels = list(set(self.work_labels))
+        
+    def survival(self,query_condition_path = location+'/config/query_condition.json'):
+        '''construct a survival time dictionary(STD)'''
+        f = open(query_condition_path,encoding='utf-8')
+        condition_dict = json.load(f)
+        f.close()
+        
+        self.STD = {}
+        for key in self.work_labels:
+            self.STD[key] = [0,(0,0),[],condition_dict[key]['Timelen'],condition_dict[key]['Period'],condition_dict[key]['Now']]
+        for exp in self.work_exp:
+            strtuple = exp.time.split('—')
+            datetuple = [date(int(eval(item)//1),round((eval(item)%1)*100),1) for item in strtuple]
+            interval = (datetuple[1]-datetuple[0]).days
+            for key in exp.labels:
+                self.STD[key][0] += interval
+                self.STD[key][2].append(datetuple)
+        for key in self.STD.keys():
+            self.STD[key][1] = (self.STD[key][2][0][0],self.STD[key][2][-1][1])
+            self.STD[key][0] = self.STD[key][0]
+        return self.STD
+    
+    def reply(self,query):
+        '''imageine the Query looks like :
+        {'基层经历':{'Timelen':730,
+        'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1))}
+        '教育':{'Now':True}
+        }
+        '''
+        querykeys = list(query.keys())
+        if set(querykeys).issubset(set(self.work_labels)) == 0:
+            return False
+        for key in querykeys:
+            if self.STD[key][3] == True:
+                if query[key]['Timelen'] > self.STD[key][0]:
+                    return False
+            if self.STD[key][4] == True:
+                for tu in self.STD[key][2]:
+                    for d in tu:
+                        if d>query[key]['Period'][0] and d<query[key]['Period'][1]:
+                            return True
+                return False
+            if self.STD[key][5] == True:
+                if query[key]['Now']==True:
+                    if key not in self.work_exp[-1].labels:
+                        return False
+        return True
+        
         
     def labelmap(self):
         plt.grid(True)
@@ -52,13 +106,14 @@ class Person:
         for exp in self.work_exp:
             strtuple = exp.time.split('—')
             numtuple = [self.date2num(zw) for zw in strtuple]
-            plt.plot([numtuple[0]]*2,[0,len(self.work_labels)+1],linestyle=':',color='grey')
-            plt.text(numtuple[0],len(self.work_labels)+1,strtuple[0],ha='center')
+            plt.plot([numtuple[0]]*2,[0.5,len(self.work_labels)+0.5],linestyle=':',color='grey')
+            plt.text(numtuple[0],len(self.work_labels)+0.5,strtuple[0],ha='center')
             X.append(numtuple)
             Y.append(exp.labels)
         for i,timelen in enumerate(X):
             for label in Y[i]:
                 plt.plot(timelen,[Ydict[label]]*len(timelen),linewidth=5.0)
+        plt.show()
                 
     def date2num(self,text,reverse=False):
         if reverse==False:
@@ -425,9 +480,9 @@ if __name__ == '__main__':
     liu.update_resumes([r1,r2,r3,r4])
     liu.labelmap()
     
-    '''
-    print(liu)
-    print(liu.work_exp)
-    liu[0] = 'f'
-    print(liu.work_exp)
-    print(len(liu))'''
+    print(liu.survival())
+    
+    query  ={#'基层工作':{'Timelen':730,'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1))},
+            '教育':{'Timelen':730,'Now':True}
+            }
+    print('\n',liu.reply(query))
