@@ -20,6 +20,9 @@ class Experience:
         self.labels = labels # list of labels
         self.batch_id =None
 class WorkExperience(Experience):
+    '''The format of `time` and `labels` should be like:
+    '2015.08—2019.07' ['双一流大学','理工方向']
+    '''
     def __init__(self, text, time=None, loc=None, org=None,seg=None,
                  labels=None, pos=None):
         Experience.__init__(self,text,time,loc,org,seg,labels)
@@ -46,6 +49,7 @@ class Person:
         for item in self.work_exp:
             self.work_labels.extend(item.labels)
         self.work_labels = list(set(self.work_labels))
+        self.survival()
         
     def survival(self,query_condition_path = location+'/config/query_condition.json'):
         '''construct a survival time dictionary(STD)'''
@@ -68,13 +72,40 @@ class Person:
             self.STD[key][0] = self.STD[key][0]
         return self.STD
     
-    def reply(self,query):
+    def checkbytime(self,year,month,day):
+        checktime = date(year,month,day)
+        for exp in self.work_exp:
+            strtuple = exp.time.split('—')
+            datetuple = [date(int(eval(item)//1),round((eval(item)%1)*100),1) for item in strtuple]
+            if checktime>datetuple[0] and checktime<datetuple[1]:
+                return [exp.text,exp.labels]
+        return None
+    
+    def reply(self,allquery):
         '''imageine the Query looks like :
-        {'基层经历':{'Timelen':730,
-        'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1))}
-        '教育':{'Now':True}
+        allquery = {
+        'personal':{'gender':'W','age':(20,50)},
+        'workexp':{
+            '基层经历':{'Timelen':730,'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1)),'Now':False},
+            '教育':{'Timelen':730,'Now':False}
+        }
+        }
+        在不勾选任何附加项的情况下，返回的Query应为：
+        allquery = {
+        'personal':{'gender':None,'age':(0,120)},
+        'workexp':{
+            '勾选的标签':{'Timelen':1,'Period':(datetime.date(1949, 10, 1), datetime.date(9999, 10, 1)),'Now':False},
+        }
         }
         '''
+        pquery = allquery['personal']
+        if pquery['gender'] != None:
+            if pquery['gender'] != self.gender:
+                return False
+        if (self.age < pquery['age'][0]) or (self.age > pquery['age'][1]):
+            return False
+        
+        query = allquery['workexp']
         querykeys = list(query.keys())
         if set(querykeys).issubset(set(self.work_labels)) == 0:
             return False
@@ -82,16 +113,21 @@ class Person:
             if self.STD[key][3] == True:
                 if query[key]['Timelen'] > self.STD[key][0]:
                     return False
-            if self.STD[key][4] == True:
-                for tu in self.STD[key][2]:
-                    for d in tu:
-                        if d>query[key]['Period'][0] and d<query[key]['Period'][1]:
-                            return True
-                return False
             if self.STD[key][5] == True:
                 if query[key]['Now']==True:
                     if key not in self.work_exp[-1].labels:
                         return False
+            if self.STD[key][4] == True:
+                flag = 0
+                for tu in self.STD[key][2]:
+                    if flag == 1:
+                        break
+                    for d in tu:
+                        if d>query[key]['Period'][0] and d<query[key]['Period'][1]:
+                            flag = 1
+                if flag == 0:
+                    return False
+
         return True
         
         
@@ -470,19 +506,25 @@ class ResumeFileIO(Catalog):
         return line
 if __name__ == '__main__':
     print('catalog.py debugging')
-    #help(Person)
     liu = Person('张三')
+    liu.gender = 'W'
+    liu.age = 30
     #r0 = WorkExperience(time='',labels=[])
-    r1 = WorkExperience(text='',time='1997.08—2001.09',labels=['双一流大学'])
-    r2= WorkExperience(text='',time='2001.09—2006.04',labels=['深圳','龙华','基层工作'])
-    r3= WorkExperience(text='',time='2006.04—2016.10',labels=['深圳','教育'])
-    r4= WorkExperience(text='',time='2016.10—2020.09',labels=['深圳','市人大直属'])
+    r1 = WorkExperience(text='某某大学学习',time='1997.08—2001.09',labels=['双一流大学'])
+    r2= WorkExperience(text='深圳龙华区公务员',time='2001.09—2006.04',labels=['深圳','龙华','基层工作'])
+    r3= WorkExperience(text='深圳市党校校长',time='2006.04—2016.10',labels=['深圳','教育'])
+    r4= WorkExperience(text='深圳市人大代表',time='2016.10—2020.09',labels=['深圳','市人大直属'])
     liu.update_resumes([r1,r2,r3,r4])
     liu.labelmap()
     
     print(liu.survival())
     
-    query  ={#'基层工作':{'Timelen':730,'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1))},
-            '教育':{'Timelen':730,'Now':True}
+    query = {
+            'personal':{'gender':'W','age':(20,50)},
+            'workexp':{
+                #'基层经历':{'Timelen':730,'Period':(datetime.date(2001, 9, 1), datetime.date(2006, 4, 1)),'Now':False},
+                '教育':{'Timelen':730,'Now':False}
             }
-    print('\n',liu.reply(query))
+            }
+    print('\nreply query:',liu.reply(query))
+    print('check by time:',liu.checkbytime(2015,2,3))
