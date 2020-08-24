@@ -6,7 +6,7 @@ import sklearn
 from sklearn.linear_model import SGDClassifier
 from sklearn.multiclass  import OneVsRestClassifier
 from gensim.models import FastText
-from .logic_tree import logictree
+from logic_tree import logictree
 #from Career_Platform.parser.database import backend_database_connection
 #from Career_Platform.parser.exceptions import TrainDataException
 import re,os,pickle
