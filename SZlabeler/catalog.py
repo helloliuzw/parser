@@ -30,7 +30,7 @@ class WorkExperience(Experience):
 
 class Person:
     '''Description Here'''
-    def __init__(self,name,gender='',age=30):
+    def __init__(self,name='Hidden',gender='',age=30):
         self.name = name
         self.gender = gender
         self.age = age
@@ -45,6 +45,9 @@ class Person:
     
     def update_resumes(self,L):
         self.work_exp = L
+        for i in range(len(L)):
+            self.work_exp[i].time = L[i].time.replace('9999',str(date.today().year+1))
+        
         self.work_labels = []
         for item in self.work_exp:
             self.work_labels.extend(item.labels)
@@ -59,10 +62,12 @@ class Person:
         
         self.STD = {}
         for key in self.work_labels:
+            if condition_dict.get(key)==None:
+                condition_dict[key] = {'Timelen':False,'Period':False,'Now':False}
             self.STD[key] = [0,(0,0),[],condition_dict[key]['Timelen'],condition_dict[key]['Period'],condition_dict[key]['Now']]
         for exp in self.work_exp:
             strtuple = exp.time.split('—')
-            datetuple = [date(int(eval(item)//1),round((eval(item)%1)*100),1) for item in strtuple]
+            datetuple = [date(int(eval(item)//1),min(round((eval(item)%1)*100),12),1) for item in strtuple]
             interval = (datetuple[1]-datetuple[0]).days
             for key in exp.labels:
                 self.STD[key][0] += interval

@@ -419,3 +419,7 @@ if __name__ == '__main__':
     t1 = time.time()
     print(label.classify(text3,True))
     print('Time Consuming:',time.time()-t1,'s')
+    
+    zw = ManualLabelClassifier()
+    out = zw.classify('深圳清华大学学生')
+    print(out)
