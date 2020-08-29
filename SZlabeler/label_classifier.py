@@ -124,6 +124,7 @@ class ExpRuleClassifier(LabelClassifier):
                 if final == pre_dict_state:
                     break
                 pre_dict_state = final
+        final = [key for key in final.keys() if final[key]==True]
         return final
     
     def groupclassify(self,groupname,text,f=1):

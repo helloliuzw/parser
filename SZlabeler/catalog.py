@@ -36,18 +36,20 @@ class Person:
         self.age = age
         self.tags = []
         self.work_exp = []  #indexed by rid
-        self.work_labels = []
-        for item in self.work_exp:
-            self.work_labels.extend(item.labels)
-        self.work_labels = list(set(self.work_labels))
-    def __str__(self):
-        return '姓名：'+self.name+'，共有'+str(self.__len__())+'条经历；'
+        self.work_labels = list(set([]))
     
     def update_resumes(self,L):
         self.work_exp = L
         for i in range(len(L)):
-            self.work_exp[i].time = L[i].time.replace('9999',str(date.today().year+1))
-        
+            if self.work_exp[i].time.endswith('9999.99'):
+                self.work_exp[i].time = self.work_exp[i].time[:-7] + str(date.today().year) + '.' + str(date.today().month+1).rjust(2,'0')
+                
+            #self.work_exp[i].time = L[i].time.replace('9999',str(date.today().year))
+            #if self.work_exp[i].time.endswith('.99'):
+            #    self.work_exp[i].time = self.work_exp[i].time[:-2] + str(date.today().month+1).rjust(2,'0')
+            strtuple = self.work_exp[i].time.split('—')
+            self.work_exp[i].time = [date(int(eval(item)//1),min(round((eval(item)%1)*100),12),1) for item in strtuple]
+
         self.work_labels = []
         for item in self.work_exp:
             self.work_labels.extend(item.labels)
@@ -63,11 +65,10 @@ class Person:
         self.STD = {}
         for key in self.work_labels:
             if condition_dict.get(key)==None:
-                condition_dict[key] = {'Timelen':False,'Period':False,'Now':False}
-            self.STD[key] = [0,(0,0),[],condition_dict[key]['Timelen'],condition_dict[key]['Period'],condition_dict[key]['Now']]
+                condition_dict[key] = {"constraint":{'Timelen':False,'Period':False,'Now':False}}
+            self.STD[key] = [0,(0,0),[],condition_dict[key]["constraint"]['Timelen'],condition_dict[key]["constraint"]['Period'],condition_dict[key]["constraint"]['Now']]
         for exp in self.work_exp:
-            strtuple = exp.time.split('—')
-            datetuple = [date(int(eval(item)//1),min(round((eval(item)%1)*100),12),1) for item in strtuple]
+            datetuple = exp.time
             interval = (datetuple[1]-datetuple[0]).days
             for key in exp.labels:
                 self.STD[key][0] += interval
@@ -80,8 +81,7 @@ class Person:
     def checkbytime(self,year,month,day):
         checktime = date(year,month,day)
         for exp in self.work_exp:
-            strtuple = exp.time.split('—')
-            datetuple = [date(int(eval(item)//1),round((eval(item)%1)*100),1) for item in strtuple]
+            datetuple = exp.time
             if checktime>datetuple[0] and checktime<datetuple[1]:
                 return [exp.text,exp.labels]
         return None
@@ -112,8 +112,10 @@ class Person:
         
         query = allquery['workexp']
         querykeys = list(query.keys())
-        if set(querykeys).issubset(set(self.work_labels)) == 0:
+        if set(querykeys).issubset(set(self.work_labels)) == False:
             return False
+        
+        #self.survival()
         for key in querykeys:
             if self.STD[key][3] == True:
                 if query[key]['Timelen'] > self.STD[key][0]:
@@ -145,21 +147,20 @@ class Person:
         plt.yticks(fontproperties="STSong") 
         plt.yticks([Ydict[key] for key in self.work_labels],self.work_labels)
         for exp in self.work_exp:
-            strtuple = exp.time.split('—')
+            strtuple = exp.time
             numtuple = [self.date2num(zw) for zw in strtuple]
             plt.plot([numtuple[0]]*2,[0.5,len(self.work_labels)+0.5],linestyle=':',color='grey')
-            plt.text(numtuple[0],len(self.work_labels)+0.5,strtuple[0],ha='center')
+            #plt.text(numtuple[0],len(self.work_labels)+0.5,strtuple[0],ha='center')
             X.append(numtuple)
             Y.append(exp.labels)
         for i,timelen in enumerate(X):
             for label in Y[i]:
-                plt.plot(timelen,[Ydict[label]]*len(timelen),linewidth=5.0)
-        plt.show()
+                plt.plot(timelen,[Ydict[label]]*len(timelen),linewidth=3.0)
+        return plt
                 
-    def date2num(self,text,reverse=False):
+    def date2num(self,dateobj,reverse=False):
         if reverse==False:
-            num = eval(text)
-            return (num//1+(num%1)/(0.12))
+            return (dateobj.year+dateobj.month/12)
         return str(text//1+round((text%1)*12)/100)
         
         
