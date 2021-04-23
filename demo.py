@@ -7,7 +7,7 @@ location = os.path.abspath(os.path.dirname(__file__))
 text1 = '清华大学深圳研究院电子通信硕士'
 text2 = '深圳市罗湖区街道派出所民警'
 text3 = '深圳市交通运输委员会福田交通运输局副局长'
-text4 = '合肥炮兵学院炮兵指挥大学本科学士'
+text4 = '深圳市公安局福田分局莲花派出所案件侦查队队长'
 
 t0 = time.time()
 label = ExpRuleClassifier()
