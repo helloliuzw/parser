@@ -6,7 +6,7 @@ import sklearn
 from sklearn.linear_model import SGDClassifier
 from sklearn.multiclass  import OneVsRestClassifier
 from gensim.models import FastText
-from logic_tree import logictree
+from .logic_tree import logictree
 #from Career_Platform.parser.database import backend_database_connection
 #from Career_Platform.parser.exceptions import TrainDataException
 import re,os,pickle
@@ -55,8 +55,105 @@ class LabelClassifier:
     # abstract function to be reimplemented in subclasses.
     def train_update(self, list_mseg, list_mlabel):
         pass
-
-
+    
+class KGClassifier(LabelClassifier):
+    def __init__(self, label2id_path = location+'/config/labels.txt'):
+        LabelClassifier.__init__(self)
+        self.label2id = {}
+        with open(label2id_path,'r') as f:
+            label2id = f.readlines()
+        for line in label2id:
+            line = line.strip().split('\t')
+            self.label2id[line[0]] = eval(line[1])
+        self.id2label = []
+        for key in self.label2id:
+            self.id2label.append(key)
+        self.loadKGE()
+    def loadKGE(self,Model_path = 'SZlabeler/model/kge1.txt'):
+        with open(Model_path,'rb') as f:
+            self.Mymodel = pickle.load(f)
+        f.close()
+        
+    def doc_emb1(self,s):
+        s = s.split()
+        result = 0
+        for item in s:
+            result += self.Mymodel[item].detach().numpy()
+        return result/len(s)
+        
+    def loaddata(self,text_path = location+'/../../data/Corpus.txt',name_path = location+'/../../data/powerset.txt'):
+        with open(text_path,'r') as f:
+            texts = f.readlines()
+        f.close()
+        with open(name_path,'r') as g:
+            names = g.readlines()
+        g.close()
+        self.x_train = []
+        self.x_test = []
+        self.y_train = []
+        self.y_test = []
+        for i in range(len(texts)):
+            _,flag,labels = names[i].split('\t',2)
+            labels = eval(labels)
+            labels = [self.label2id[x] for x in labels]
+            y = np.zeros(len(self.id2label))
+            for ind in labels:
+                y[ind] = 1
+            if flag == 'train':
+                self.x_train.append(texts[i].strip())
+                self.y_train.append(y)
+            elif flag == 'test':
+                self.x_test.append(texts[i].strip())
+                self.y_test.append(y)
+        self.y_train = np.array(self.y_train)
+        self.y_test = np.array(self.y_test)
+        for i,s in enumerate(self.x_train):
+            self.x_train[i] = self.doc_emb1(s)
+        self.x_train = np.array(self.x_train)
+        for i,s in enumerate(self.x_test):
+            self.x_test[i] = self.doc_emb1(s)
+        self.x_test = np.array(self.x_test)
+        
+    def trainclf(self):
+        model = OneVsRestClassifier(svm.SVC(C=1.0, kernel='rbf', degree=3, gamma='auto'))
+        self.clf0 = model.fit(self.x_train, self.y_train)
+        
+    def saveclf(self,path = location+'//model/temp.model'):
+        with open(path,'wb') as f:
+            pickle.dump(self.clf0,f)
+        f.close()
+    def loadclf(self,path = location+'/model/kg_svc_1.model'):
+        with open(path,'rb') as f:
+            self.clf = pickle.load(f)
+        f.close()
+        
+    def classify(self,string):
+        string = self.doc_emb1(string)
+        string = [string]
+        pre = self.clf.predict(string)[0]
+        result = []
+        for i,flag in enumerate(pre):
+            if float(flag) > 0:
+                result.append(self.id2label[i])
+        return result
+    
+    def _evaluate(self,x,y):
+        c = (x + y)[0]
+        m,n = 0,0
+        for num in c:
+            if num > 0.0:
+                m += 1
+            if num == 2.0:
+                n += 1
+        return n/m
+    def Accu(self):
+        self.score = 0
+        for i in range(self.x_test.shape[0]):
+            y_predict = self.clf.predict(np.array([self.x_test[i]]))
+            self.score += self._evaluate(y_predict,self.y_test[i])
+        self.score = self.score/self.x_test.shape[0]
+        return self.score
+        
 class ManualLabelClassifier(LabelClassifier):
 
     """ a rule-based  classifier using keywords
