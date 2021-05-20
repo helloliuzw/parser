@@ -117,6 +117,8 @@ class KGClassifier(LabelClassifier):
     def trainclf(self):
         model = OneVsRestClassifier(svm.SVC(C=1.0, kernel='rbf', degree=3, gamma='auto'))
         self.clf0 = model.fit(self.x_train, self.y_train)
+    def online_train_clf(self,x_test, y_test):
+        self.clf0 = self.clf0.partial_fit(x_test, y_test)
         
     def saveclf(self,path = location+'//model/temp.model'):
         with open(path,'wb') as f:
