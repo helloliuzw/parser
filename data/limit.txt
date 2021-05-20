@@ -1,0 +1,5 @@
+双一流大学	label.reject.label	基层工作
+龙华	label.reject.label	南山
+港澳外事	label.reject.label	龙华
+军检法机构	label.reject.label	双一流大学
+卫生环保	label.reject.label	公安

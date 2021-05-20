@@ -1,4 +1,4 @@
-from SZlabeler.label_classifier import ExpRuleClassifier
+from SZlabeler.label_classifier import *
 import os
 import time
 location = os.path.abspath(os.path.dirname(__file__))
@@ -13,27 +13,19 @@ t0 = time.time()
 label = ExpRuleClassifier()
 print('Obj building Consuming:',time.time()-t0,'s')
 
-print('\nSample Text:',text1)
-t0 = time.time()
-print(label.classify(text1))
-print('Time Consuming:',time.time()-t0,'s')
-
-print('\nSample Text:',text2)
-t1 = time.time()
-print(label.classify(text2))
-print('Time Consuming:',time.time()-t1,'s')
-
-print('\nSample Text:',text3)
-t1 = time.time()
-print(label.classify(text3))
-print('Time Consuming:',time.time()-t1,'s')
-
-print('\nSample Text:',text4)
-t1 = time.time()
-print(label.classify(text4))
-print('Time Consuming:',time.time()-t1,'s')
+def testclf(s):
+    print('\nSample Text:',s)
+    t0 = time.time()
+    print(label.classify(s))
+    print('Time Consuming:',time.time()-t0,'s')
+    
+testclf(text1)
+testclf(text2)
+testclf(text3)
+testclf(text4)
 
 # Testing on a mini dataset.
+'''
 f = open(location+'/data/final_version.txt','r',encoding='utf-8')
 data = f.readlines()
 f.close()
@@ -47,9 +39,6 @@ t0 = time.time()
 for resume in data:
     res_dict = clf.classify(resume)
     predict = [label for (label,value) in res_dict.items() if value==True]
-    '''
-    if '深圳' in predict:
-        predict.remove('深圳')'''
     if predict == []:
         toshow.append('0 '+resume)
     else:
@@ -57,3 +46,4 @@ for resume in data:
         count += 1
 print('Time Consuming:',time.time()-t0,'s')
 print('Labeled resume:',count,'Total resume:',len(toshow))
+'''
