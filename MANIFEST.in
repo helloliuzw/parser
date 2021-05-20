@@ -1,3 +1,0 @@
-include *.json
-include *.txt
-global-include * 
